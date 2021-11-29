@@ -1,0 +1,8 @@
+/.vscode
+/.idea
+/filesystem/target
+/CMakeLists.txt
+/log
+/token.txt
+/cmake-build-debug/
+/tests/__pycache__/
