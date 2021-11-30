@@ -292,12 +292,10 @@ int networkfs_iterate(struct file *filp, struct dir_context *ctx)
 ssize_t networkfs_read(struct file *filp, char __user *buffer, size_t len, loff_t *offset) {
     struct dentry *dentry;
     struct inode *inode;
-    loff_t pos;
     ino_t ino;
 
     dentry = filp->f_path.dentry;
     inode = dentry->d_inode;
-    pos = filp->f_pos;
     ino = inode->i_ino;
 
     char inode_param[sizeof(ino_t) + 30];
@@ -306,9 +304,9 @@ ssize_t networkfs_read(struct file *filp, char __user *buffer, size_t len, loff_
     const char* params[1];
     params[0] = inode_param;
 
-    struct content {
+    struct content_struct {
         u64 content_length;
-        char *content;
+        char content[512 + 10];
     };
 
     int status = connect_to_server("read", 1, params, fs_token, output_buf);
@@ -317,16 +315,15 @@ ssize_t networkfs_read(struct file *filp, char __user *buffer, size_t len, loff_
         char message[200];
         sprintf(message, "read error: %d\n", status);
         printk(message);
+        return -1;
     } else {
-        struct content *content = (struct content*)output_buf;
+        struct content_struct *content_ref = (struct content_struct*)output_buf;
         int i;
-        for (i = 0; i < len; i++) { // ???!!!
-            //put_user(content->content[pos++], buffer + (*offset)++);
-            //*(buffer + (*offset)++) = content->content[pos++];
+        for (i = 0; i < len && filp->f_pos < content_ref->content_length; i++) {
+            put_user(content_ref->content[filp->f_pos++], buffer + (*offset)++);
         }
+        return i;
     }
-
-    return status;
 }
 
 
@@ -346,10 +343,10 @@ ssize_t networkfs_write(struct file *filp, const char *buffer, size_t len, loff_
     sprintf(inode_param, "inode=%lu", ino);
 
     int i;
-    for (i = 0; i < len; i++) {
-        get_user(original[i], buffer + (*offset)++); // ???
+    for (i = 0; i < len && i < 512; i++) {
+        get_user(original[i], buffer + (*offset)++);
     }
-    url_encode(original, len, encode); // ???
+    url_encode(original, len, encode);
     sprintf(content, "content=%s", encode);
 
     const char* params[2];
@@ -362,9 +359,10 @@ ssize_t networkfs_write(struct file *filp, const char *buffer, size_t len, loff_
         char message[200];
         sprintf(message, "write error: %d\n", status);
         printk(message);
+        return -1;
+    } else {
+        return i;
     }
-
-    return status;
 }
 
 
