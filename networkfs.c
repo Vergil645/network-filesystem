@@ -13,8 +13,9 @@ MODULE_VERSION("0.01");
 
 char fs_token[300];
 char name[256 * 3 + 30];
+char content[512 * 3 + 30];
 char output_buf[8192 + 10];
-char original[512 + 10];
+char original[512 + 30];
 char encode[512 * 3 + 10];
 
 
@@ -316,7 +317,6 @@ ssize_t networkfs_read(struct file *filp, char __user *buffer, size_t len, loff_
         char message[200];
         sprintf(message, "read error: %d\n", status);
         printk(message);
-        return -1;
     } else {
         struct content *content = (struct content*)output_buf;
         int i;
@@ -324,8 +324,9 @@ ssize_t networkfs_read(struct file *filp, char __user *buffer, size_t len, loff_
             //put_user(content->content[pos++], buffer + (*offset)++);
             //*(buffer + (*offset)++) = content->content[pos++];
         }
-        return 0;
     }
+
+    return status;
 }
 
 
@@ -344,10 +345,9 @@ ssize_t networkfs_write(struct file *filp, const char *buffer, size_t len, loff_
     char inode_param[sizeof(ino_t) + 30];
     sprintf(inode_param, "inode=%lu", ino);
 
-    char content[strlen("content=") + 512 * 3 + 10];
-    int i = 0;
-    for (; i < len; i++) {
-        get_user(original[i], buffer + *offset + i); // originaloriginaloriginal
+    int i;
+    for (i = 0; i < len; i++) {
+        get_user(original[i], buffer + (*offset)++); // ???
     }
     url_encode(original, len, encode); // ???
     sprintf(content, "content=%s", encode);
@@ -362,10 +362,9 @@ ssize_t networkfs_write(struct file *filp, const char *buffer, size_t len, loff_
         char message[200];
         sprintf(message, "write error: %d\n", status);
         printk(message);
-        return -1;
-    } else {
-        return 0;
     }
+
+    return status;
 }
 
 
