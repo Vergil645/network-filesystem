@@ -118,7 +118,7 @@ int connect_to_server(const char *command, int params_count, const char *params[
     }
     strcat(send_buf, " HTTP/1.1\r\nHost: nerc.itmo.ru\r\nConnection: close\r\n\r\n");
 
-    printk(send_buf);
+    // printk(send_buf);
 
     error = send_msg_to_server(sock_ptr, send_buf);
     if (error < 0)
